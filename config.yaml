@@ -1,0 +1,12 @@
+server:
+  address: "0.0.0.0"
+  port: 8443
+
+ca:
+  cert_path: "certs/ca.crt"
+  key_path: "certs/ca.key"
+  organization: "Secure Messaging POC"
+
+bin_manager:
+  initial_mask: "0xFFFFFFFFFFFFF000"
+  message_retention: "24h"

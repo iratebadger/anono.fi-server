@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-messaging
+  labels:
+    app: secure-messaging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-messaging
+  template:
+    metadata:
+      labels:
+        app: secure-messaging
+    spec:
+      containers:
+      - name: server
+        image: ghcr.io/yourusername/secure-messaging-poc:latest
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - name: certs
+          mountPath: /app/certs
+          readOnly: true
+        - name: config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: certs
+        secret:
+          secretName: secure-messaging-certs
+      - name: config
+        configMap:
+          name: secure-messaging-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: secure-messaging
+spec:
+  selector:
+    app: secure-messaging
+  ports:
+  - port: 8443
+    targetPort: 8443
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: secure-messaging-config
+data:
+  config.yaml: |
+    server:
+      address: "0.0.0.0"
+      port: 8443
+    
+    ca:
+      cert_path: "certs/ca.crt"
+      key_path: "certs/ca.key"
+      organization: "Secure Messaging POC"
+    
+    bin_manager:
+      initial_mask: "0xFFFFFFFFFFFFF000"
+      message_retention: "24h"
+---
+# Note: In a real deployment, you would create the CA cert/key secrets securely
+# This is just a placeholder to show the structure
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secure-messaging-certs
+type: Opaque
+data:
+  # These would be base64 encoded values of your actual certificates
+  "ca.crt": "" # base64 encoded ca.crt
+  "ca.key": "" # base64 encoded ca.key

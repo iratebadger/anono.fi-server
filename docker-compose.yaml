@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.dev
+    ports:
+      - "8443:8443"
+      - "2345:2345"  # For delve debugger
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    environment:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    command: air -c .air.toml
+    restart: unless-stopped
+
+volumes:
+  go-modules:
